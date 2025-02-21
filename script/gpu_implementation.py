@@ -1,4 +1,6 @@
 # 2025 Steven Chiacchira
+# seems this is way too slow :(
+# probably because matrix is only 16x16, and torch is not meant for this
 from typing import Final, List
 
 import torch
@@ -86,7 +88,7 @@ next_state: Tensor = torch.rand((1, 2, 16, 16), dtype=torch.float16).round()
 print(next_state)
 print(next_state)
 
-automata_block_gen = torch.jit.script(AutomataBlock(11, 2))
+automata_block_gen = torch.jit.script(AutomataBlock(3_000_000, 2))
 with torch.no_grad():
     for _ in range(5):
         next_state = automata_block_gen(next_state)

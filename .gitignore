@@ -1,4 +1,5 @@
 target
 doc
-rfs/*pdf
+rfc/*pdf
+rfc/asset/*
 data

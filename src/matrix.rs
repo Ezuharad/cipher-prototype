@@ -1,6 +1,4 @@
-type MIndex = (isize, isize);
-use std::iter::zip;
-use std::ops::{Add, Index};
+pub type MatrixIndex = (isize, isize);
 
 /// Error occurring during [`BitMatrix`] initialization
 #[derive(Debug)]
@@ -11,9 +9,10 @@ pub enum BitMatrixConstructError {
     EmptyTable(),
 }
 
-struct ToroidalBitMatrix {
-    rows: usize,
-    cols: usize,
+#[derive(Debug, Clone)]
+pub struct ToroidalBitMatrix {
+    pub rows: usize,
+    pub cols: usize,
     storage: Vec<u32>,
 }
 
@@ -43,7 +42,7 @@ impl ToroidalBitMatrix {
         {
             let mut next_element: u32 = 0;
             for (i, b) in chunk.to_vec().into_iter().enumerate() {
-                next_element += if b { 2 ^ i as u32 } else { 0 };
+                next_element += if b { 2_u32.pow(i as u32) } else { 0 };
             }
             storage.push(next_element);
         }
@@ -55,7 +54,7 @@ impl ToroidalBitMatrix {
         })
     }
 
-    pub fn get(&self, idx: MIndex) -> bool {
+    pub fn get(&self, idx: MatrixIndex) -> bool {
         let row = idx.0.rem_euclid(self.rows as isize);
         let col = idx.1.rem_euclid(self.cols as isize);
         let bit_index = row as usize * self.cols + col as usize;
@@ -66,7 +65,7 @@ impl ToroidalBitMatrix {
         (self.storage[vec_idx] >> element_offset) & 1 != 0
     }
 
-    pub fn set(&mut self, idx: MIndex, value: bool) {
+    pub fn set(&mut self, idx: MatrixIndex, value: bool) {
         let row = idx.0.rem_euclid(self.rows as isize);
         let col = idx.1.rem_euclid(self.cols as isize);
         let bit_index = row as usize * self.cols + col as usize;
@@ -84,5 +83,13 @@ impl ToroidalBitMatrix {
         for (i, element) in (&mut self.storage).into_iter().enumerate() {
             *element ^= other.storage[i as usize];
         }
+    }
+
+    pub fn popcount(&self) -> u32 {
+        self.storage.iter().map(|e| e.count_ones()).sum()
+    }
+
+    pub fn get_storage(&self) -> Vec<u32> {
+        self.storage.clone()
     }
 }

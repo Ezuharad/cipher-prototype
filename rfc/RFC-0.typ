@@ -113,7 +113,7 @@ Shown in @initialization_matrices are initialization matrices $I_t$ and $I_s$. T
 4. It is desirable that the key be distributed evenly through the initially seeded matrix, but not in a symmetric manner.
 5. It is desirable that the two matrices not be symmetric to each other.
 
-Following seeding, the Key Automata rule is applied 32 times to the seeded matrices $I_t$ and $I_S$ to obtain $T_0$ and $S_0$ respectively. In order to obtain the next pair of block keys $T_1$ and $S_1$, the Key Automata rule is applied an additional 32 times to $T_0$ and $S_0$. This can be repeated until enough blocks are obtained to encrypt the message.
+Following seeding, the Key Automata rule is applied 11 times to the seeded matrices $I_t$ and $I_S$ to obtain $T_0$ and $S_0$ respectively. In order to obtain the next pair of block keys $T_1$ and $S_1$, the Key Automata rule is applied an additional 11 times to $T_0$ and $S_0$. This can be repeated until enough blocks are obtained to encrypt the message.
 
 === Key Automata Rule <key_automata>
 In choosing our CA rule for the key scheduling algorithm, a few desired traits were identified:
@@ -124,11 +124,12 @@ In choosing our CA rule for the key scheduling algorithm, a few desired traits w
 5. The rule is simple enough to process quickly, allowing for fast encryption and decryption (see @encryption_decryption).
 
 From these maxims, we propose the following class III Cellular Automata rule:
-#text([TODO! Decide class II rule], fill: red)
+1. If a cell is a `1` and has 2-4 neighboring `1` cells it stays a `1`; otherwise it becomes a `0`.
+2. If a cell is a `0` and has 2-6 neighboring `1` cells it becomes a `1`; otherwise it becomes a `0`.
 
 Where we additionally allow border cells to neighbor opposing border cells to promote faster diffusion of information. This property additionally makes all of the cells symmetric to each other; without this property border cells would behave differently. Although we do not prove any of our assumptions about this CA rule due to the undecidable nature of related problems, we empirically observe that many are approximately satisfied. Numbers obtained from these experiments are given in @empirical_results.
 
-The decision to evolve a CA 32 times before each use was motivated by diffusion. It is clear by our rule that any given cell can only affect its eight neighboring cells. Due to this, for each cell to affect each other cell in generation, it is necessary that at least 16 iterations of our CA rule are applied. 32 rounds were chosen to allow this newly pseudorandom state to diffuse once again.  // TODO: would it be better to analyze in terms of $c$ for our rule?
+The decision to evolve a CA 11 times before each use was motivated by two factors: first, it is clear by our rule that any given cell can only affect its eight neighboring cells. Due to this, for each cell to affect each other cell in generation, it is necessary that at least 8 iterations of our CA rule are applied (recall that the space our cells occupies loops). Additionally, it is always possible for the CA to repeat after some number of generations $G$. Choosing a prime number then reduces the likelihood that the CA's repetitions will align with the state usage.
 
 === Scrambling Algorithm <scrambling_algorithm>
 We have now defined a method for generating pseudorandom noise of the same size as our message block. However, it is possible that contiguous regions of our message will be uniformly transformed by a simple XOR, meaning partial reconstruction may be possible. To mitigate this, we also introduce a scrambling algorithm $V$ to ensure the message bits are well dispersed before XORing.

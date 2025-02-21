@@ -41,7 +41,7 @@ pub fn gen_char_map(seed: u32) -> HashMap<char, bool> {
 /// [`TableReadError`] on a failure.
 pub fn parse_bool_table(
     string: &str,
-    char_map: HashMap<char, bool>,
+    char_map: &HashMap<char, bool>,
 ) -> Result<Vec<Vec<bool>>, TableReadError> {
     let mut table: Vec<Vec<bool>> = Vec::new();
     for line in string.lines() {
