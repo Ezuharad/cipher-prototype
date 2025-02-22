@@ -1,4 +1,5 @@
-use crate::matrix::{MatrixIndex, ToroidalBitMatrix};
+// 2025 Steven Chiacchira
+use crate::matrix::{MatrixIndex, ToroidalBinaryMatrix, ToroidalBoolMatrix};
 use std::mem;
 
 /// The character used to represent an [`Automaton`]'s `true` state in files and String
@@ -8,8 +9,8 @@ const TRUE_CHAR: char = '#';
 /// representations.
 const FALSE_CHAR: char = '.';
 
+#[derive(Clone, Debug)]
 /// Simple struct defining how an [`Automaton`] will change from one state to the next.
-#[derive(Debug)]
 pub struct AutomatonRule {
     /// A 9-element array of booleans. If the ith element is `true`, then a dead cell with `i`
     /// alive neighbors will become alive.
@@ -28,13 +29,19 @@ pub struct AutomatonRule {
 /// This CA implementation assumes that the geometry of the cell-space is spherical.
 pub struct Automaton {
     rule: AutomatonRule,
-    state: ToroidalBitMatrix,
+    state: ToroidalBoolMatrix,
 }
 
 impl Automaton {
-    pub fn new(state: ToroidalBitMatrix, rule: AutomatonRule) -> Self {
-        Automaton { state, rule }
+    /// Creates a new [`Automaton`] instance from a `state` represented as a [`ToroidalBoolMatrix`]
+    /// and an [`AutomatonRule`] `rule`.
+    pub fn new(state: ToroidalBoolMatrix, rule: &AutomatonRule) -> Self {
+        Automaton {
+            state,
+            rule: rule.clone(),
+        }
     }
+    /// Iterates the [`Automaton`]'s rule `iterations` times.
     pub fn iter_rule(&mut self, iterations: u32) {
         let (rows, cols) = (self.state.rows, self.state.cols);
 
@@ -45,7 +52,7 @@ impl Automaton {
                     let idx = (row as isize, col as isize);
                     let n_alive_neighbors = self.alive_neighbors(idx);
 
-                    if self.state.get(idx) {
+                    if self.state.at(idx) {
                         copy.set(idx, !self.rule.dies[n_alive_neighbors as usize]);
                     } else {
                         copy.set(idx, self.rule.born[n_alive_neighbors as usize]);
@@ -57,31 +64,43 @@ impl Automaton {
         }
     }
 
-    pub fn popcount(&self) -> u32 {
-        self.state.popcount()
+    /// Returns a reference to the Automaton state, represented as a [`ToroidalBoolMatrix`].
+    pub fn get_state(&self) -> &ToroidalBoolMatrix {
+        &self.state
     }
 
-    pub fn get_storage(&self) -> Vec<u32> {
-        self.state.get_storage()
-    }
-
+    /// Counts the number of alive [Moore
+    /// neighbors](https://en.wikipedia.org/wiki/Moore_neighborhood) at `idx`.
     pub fn alive_neighbors(&self, idx: MatrixIndex) -> u32 {
         let (row, col) = (idx.0, idx.1);
         let mut sum_neighbors = 0;
 
         for r in (row - 1)..=(row + 1) {
             for c in (col - 1)..=(col + 1) {
-                sum_neighbors += self.state.get((r, c)) as u32
+                sum_neighbors += self.state.at((r, c)) as u32
             }
         }
 
-        sum_neighbors -= self.state.get((row, col)) as u32;
+        sum_neighbors -= self.state.at((row, col)) as u32;
 
         return sum_neighbors;
     }
 }
 
 /// Represents the state of the [`Automaton`] as a rectangular array of characters.
+/// ex. 
+/// an Automaton with the state
+/// ```txt
+/// TFFT
+/// TFTT
+/// TTTT
+/// ```
+/// Will be represented as 
+/// ```txt
+/// #..#
+/// TFTT
+/// TTTT
+/// ```
 impl ToString for Automaton {
     fn to_string(&self) -> String {
         let (rows, cols) = (self.state.rows, self.state.cols);
@@ -89,7 +108,7 @@ impl ToString for Automaton {
 
         for row in 0..rows {
             let row_str = (0..cols)
-                .map(|c| match self.state.get((row as isize, c as isize)) {
+                .map(|c| match self.state.at((row as isize, c as isize)) {
                     true => TRUE_CHAR,
                     false => FALSE_CHAR,
                 })

@@ -68,22 +68,22 @@ We first use 32-bit key $K$ to initialize two 256-bit block keys: transpose key 
   columns: 2,
   gutter: 2mm,
   [$mat(delim: "[",
-        ., A, \#, 3, ., 2, \#, Z, ., Y, \#, X, ., W, \#, V;
-        7, ., B, ., 4, ., P, \#, O, ., N, ., M, \#, L, .;
-        \#, 6, \#, C, \#, 5, \#, Q, \#, 3, ., 2, \#, Z, ., U;
-        E, ., 5, \#, D, ., 6, ., R, \#, 4, \#, 7, ., K, \#;
-        \#, D, ., 4, \#, E, ., 7, ., S, \#, 5, ., Y, ., T;
-        F, ., C, \#, 3, ., F, ., A, \#, T, \#, 6, \#, J, \#;
-        \#, Q, \#, B, ., 2, ., G, \#, B, ., U, \#, X, ., S;
-        G, \, \#, P, ., A, ., Z, \#, H, ., C, \#, V, ., I, \#;
-        ., R, \#, O, ., 7, \#, Y, ., I, \#, D, ., W, \#, R;
-        H, ., E, \#, N, ., 6, \#, X, ., J, ., E, \#, H, .;
-        \#, S, ., D, \#, M, ., 5, \#, W, ., K, \#, F, ., Q;
-        I, \#, F, ., C, \#, L, ., 4, \#, V, \#, L, ., G, .;
-        ., T, ., A, ., B, \#, K, ., 3, \#, U, ., M, ., P;
-        J, \#, G, \#, H, \#, I, \#, J, \#, 2, \#, T, \#, N, \#;
-        ., U, \#, V, ., W, ., X, ., Y, ., Z, \#, S, ., O;
-        K, \#, L, ., M, \#, N, \#, O, \#, P, ., Q, \#, R, .;
+    ., A, \#, 3, ., 2, \#, Z, ., Y, \#, X, ., W, \#, V;
+    7, ., B, ., 4, ., P, \#, O, ., N, ., M, \#, L, .;
+    \#, 6, \#, C, \#, 5, \#, Q, \#, 3, ., 2, \#, Z, ., U;
+    E, ., 5, \#, D, ., 6, ., R, \#, 4, \#, 7, ., K, \#;
+    \#, D, ., 4, \#, E, ., 7, ., S, \#, 5, ., Y, ., T;
+    F, ., C, \#, 3, ., F, ., A, \#, T, \#, 6, \#, J, \#;
+    \#, Q, \#, B, ., 2, ., G, \#, B, ., U, \#, X, ., S;
+    G, \, \#, P, ., A, ., Z, \#, H, ., C, \#, V, ., I, \#;
+    ., R, \#, O, ., 7, \#, Y, ., I, \#, D, ., W, \#, R;
+    H, ., E, \#, N, ., 6, \#, X, ., J, ., E, \#, H, .;
+    \#, S, ., D, \#, M, ., 5, \#, W, ., K, \#, F, ., Q;
+    I, \#, F, ., C, \#, L, ., 4, \#, V, \#, L, ., G, .;
+    ., T, ., A, ., B, \#, K, ., 3, \#, U, ., M, ., P;
+    J, \#, G, \#, H, \#, I, \#, J, \#, 2, \#, T, \#, N, \#;
+    ., U, \#, V, ., W, ., X, ., Y, ., Z, \#, S, ., O;
+    K, \#, L, ., M, \#, N, \#, O, \#, P, ., Q, \#, R, .;
   )$],
   [$mat(delim: "[",
     P, \#, O, \#, N, \#, M, \#, L, \#, K, \#, J, \#, I, \#;
@@ -109,11 +109,13 @@ Shown in @initialization_matrices are initialization matrices $I_t$ and $I_s$. T
 
 1. It is desirable that the initial state of each CA contains roughly the same number of `1` and `0` cells. In order to achieve this, 64 cells are initialized with a constant (independent of $K$) `1` value, and 64 cells are initialized with a constant `0` value. This applies a form of Laplacian smoothing to our initial automata states, so we are biased to obtain a state with the desired uniform property.
 2. It is desirable that our key values interact with the constant values immediately, as otherwise the constant values will yield invariant sections of the early-stages of the evolved automata. Thus, the constant and seeded values are arranged in a checkerboard pattern.
-3. It is desirable that no key can yield a symmetric initial state, as CAs with symmetric initial states will remain symmetric. The chosen constant values were taken from a pattern#footnote([#set text(fill: red); TODO! Decide pattern. Could be a spiral, cropped fractal]) which is not locally symmetric, guaranteeing no $K$ can yield a symmetric CA.
+3. It is desirable that no key can yield a bilaterally symmetric initial state, as CAs with symmetric initial states will remain symmetric, providing patterns in the generated noise which an adversary can take advantage of. The chosen constant values were taken from a pattern which is not bilaterally symmetric. This guarantees no $K$ can yield an initially symmetric CA, but it does not preclude a symmetric state from arising during evolution.
 4. It is desirable that the key be distributed evenly through the initially seeded matrix, but not in a symmetric manner.
 5. It is desirable that the two matrices not be symmetric to each other.
 
 Following seeding, the Key Automata rule is applied 11 times to the seeded matrices $I_t$ and $I_S$ to obtain $T_0$ and $S_0$ respectively. In order to obtain the next pair of block keys $T_1$ and $S_1$, the Key Automata rule is applied an additional 11 times to $T_0$ and $S_0$. This can be repeated until enough blocks are obtained to encrypt the message.
+
+The decision to evolve a CA 11 times before each use was motivated by two factors: first, it is clear by our rule that any given cell can only affect its eight neighboring cells. Due to this, for each cell to affect each other cell in generation, it is necessary that at least 8 iterations of our CA rule are applied (recall that the space our cells occupies loops). Additionally, a CA will always repeat after some number of generations $G$. Choosing a prime number reduces the likelihood that the CA's repetitions will align with the states used in encryption.
 
 === Key Automata Rule <key_automata>
 In choosing our CA rule for the key scheduling algorithm, a few desired traits were identified:
@@ -123,13 +125,12 @@ In choosing our CA rule for the key scheduling algorithm, a few desired traits w
 4. Few Garden of Eden states exist for the rule, as this shrinks the effective key space of each block key.
 5. The rule is simple enough to process quickly, allowing for fast encryption and decryption (see @encryption_decryption).
 
-From these maxims, we propose the following class III Cellular Automata rule:
+From these maxims, we propose the following class III Cellular Automata rule based on empirical observation of simple, Moore-neighborhood automata:
 1. If a cell is a `1` and has 2-4 neighboring `1` cells it stays a `1`; otherwise it becomes a `0`.
 2. If a cell is a `0` and has 2-6 neighboring `1` cells it becomes a `1`; otherwise it becomes a `0`.
 
 Where we additionally allow border cells to neighbor opposing border cells to promote faster diffusion of information. This property additionally makes all of the cells symmetric to each other; without this property border cells would behave differently. Although we do not prove any of our assumptions about this CA rule due to the undecidable nature of related problems, we empirically observe that many are approximately satisfied. Numbers obtained from these experiments are given in @empirical_results.
 
-The decision to evolve a CA 11 times before each use was motivated by two factors: first, it is clear by our rule that any given cell can only affect its eight neighboring cells. Due to this, for each cell to affect each other cell in generation, it is necessary that at least 8 iterations of our CA rule are applied (recall that the space our cells occupies loops). Additionally, it is always possible for the CA to repeat after some number of generations $G$. Choosing a prime number then reduces the likelihood that the CA's repetitions will align with the state usage.
 
 === Scrambling Algorithm <scrambling_algorithm>
 We have now defined a method for generating pseudorandom noise of the same size as our message block. However, it is possible that contiguous regions of our message will be uniformly transformed by a simple XOR, meaning partial reconstruction may be possible. To mitigate this, we also introduce a scrambling algorithm $V$ to ensure the message bits are well dispersed before XORing.

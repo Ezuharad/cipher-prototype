@@ -1,11 +1,20 @@
 [package]
-name = "cipher"
+name = "talos"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "cipher"
+name = "talos"
 path = "src/lib.rs"
+
+[[bin]]
+name = "crypt"
+path = "src/bin/crypt.rs"
+
+[[bin]]
+name = "test"
+path = "src/bin/test.rs"
+
 
 [dependencies]
 rand ="0.9.0"

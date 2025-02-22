@@ -71,15 +71,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "cipher"
-version = "0.1.0"
-dependencies = [
- "clap",
- "itertools",
- "rand",
-]
-
-[[package]]
 name = "clap"
 version = "4.5.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -249,6 +240,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "talos"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "itertools",
+ "rand",
 ]
 
 [[package]]

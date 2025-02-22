@@ -1,13 +1,5 @@
-pub type MatrixIndex = (isize, isize);
-
-/// Error occurring during [`BitMatrix`] initialization
-#[derive(Debug)]
-pub enum BitMatrixConstructError {
-    /// Every row of the table used to define a [`BitMatrix`]'s initial state must have the same number of columns
-    RaggedTable(),
-    /// A [`BitMatrix`] cannot have no cells
-    EmptyTable(),
-}
+// 2025 Steven Chiacchira
+use crate::matrix::{MatrixConstructError, MatrixIndex, MatrixOpError, ToroidalBinaryMatrix};
 
 #[derive(Debug, Clone)]
 pub struct ToroidalBitMatrix {
@@ -16,12 +8,18 @@ pub struct ToroidalBitMatrix {
     storage: Vec<u32>,
 }
 
-impl ToroidalBitMatrix {
-    pub fn new(table: Vec<Vec<bool>>) -> Result<Self, BitMatrixConstructError> {
+impl ToroidalBinaryMatrix for ToroidalBitMatrix {
+    fn get_rows(&self) -> usize {
+        self.rows
+    }
+    fn get_cols(&self) -> usize {
+        self.cols
+    }
+    fn new(table: Vec<Vec<bool>>) -> Result<Self, MatrixConstructError> {
         let rows = table.len();
         let cols = if rows == 0 { 0 } else { table[0].len() };
         if cols == 0 {
-            return Err(BitMatrixConstructError::EmptyTable());
+            return Err(MatrixConstructError::EmptyTable());
         }
 
         // if the table is ragged (every column is not the same size) then we reject the input and return an Err result
@@ -30,7 +28,7 @@ impl ToroidalBitMatrix {
             .map(|row| row.len() != cols)
             .fold(false, |a, b| a | b)
         {
-            return Err(BitMatrixConstructError::RaggedTable());
+            return Err(MatrixConstructError::RaggedTable());
         }
 
         let mut storage: Vec<u32> = Vec::with_capacity(rows * cols * u32::BITS as usize / 8);
@@ -47,14 +45,13 @@ impl ToroidalBitMatrix {
             storage.push(next_element);
         }
 
-        Ok(ToroidalBitMatrix {
+        Ok(Self {
             rows,
             cols,
             storage,
         })
     }
-
-    pub fn get(&self, idx: MatrixIndex) -> bool {
+    fn at(&self, idx: MatrixIndex) -> bool {
         let row = idx.0.rem_euclid(self.rows as isize);
         let col = idx.1.rem_euclid(self.cols as isize);
         let bit_index = row as usize * self.cols + col as usize;
@@ -64,8 +61,7 @@ impl ToroidalBitMatrix {
 
         (self.storage[vec_idx] >> element_offset) & 1 != 0
     }
-
-    pub fn set(&mut self, idx: MatrixIndex, value: bool) {
+    fn set(&mut self, idx: MatrixIndex, value: bool) {
         let row = idx.0.rem_euclid(self.rows as isize);
         let col = idx.1.rem_euclid(self.cols as isize);
         let bit_index = row as usize * self.cols + col as usize;
@@ -78,18 +74,45 @@ impl ToroidalBitMatrix {
             self.storage[vec_idx] &= !(1 << element_offset);
         }
     }
-
-    pub fn bitwise_xor(&mut self, other: &mut ToroidalBitMatrix) {
+    fn bitwise_xor(&mut self, other: &ToroidalBitMatrix) -> Result<(), MatrixOpError> {
+        if self.rows != other.rows || self.cols != other.cols {
+            return Err(MatrixOpError::DifferentShapes());
+        }
         for (i, element) in (&mut self.storage).into_iter().enumerate() {
             *element ^= other.storage[i as usize];
         }
+        Ok(())
     }
-
-    pub fn popcount(&self) -> u32 {
+    fn popcount(&self) -> u32 {
         self.storage.iter().map(|e| e.count_ones()).sum()
     }
+}
 
-    pub fn get_storage(&self) -> Vec<u32> {
-        self.storage.clone()
+impl ToroidalBitMatrix {
+    /// Returns the storage backing the matrix.
+    pub fn get_storage(&self) -> &Vec<u32> {
+        &self.storage
+    }
+    /// Constructs a new [`ToroidalBoolMatrix`] from storage, as well as the count of rows and
+    /// columns. Returns an error if the storage is the wrong size for the specified matrix shape.
+    pub fn from_storage(
+        rows: usize,
+        cols: usize,
+        storage: Vec<u32>,
+    ) -> Result<Self, MatrixConstructError> {
+        if rows == 0 || cols == 0 {
+            return Err(MatrixConstructError::EmptyTable());
+        }
+        let n_elements = rows * cols;
+        if storage.len()
+            != ((n_elements / u32::BITS as usize) + (n_elements % u32::BITS as usize > 0) as usize)
+        {
+            return Err(MatrixConstructError::InvalidStorage());
+        }
+        Ok(Self {
+            rows,
+            cols,
+            storage,
+        })
     }
 }

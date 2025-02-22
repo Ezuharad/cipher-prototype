@@ -1,5 +1,6 @@
 // 2025 Steven Chiacchira
-use cipher::{automata, matrix, parse};
+use talos::{automata, matrix, parse};
+use talos::matrix::ToroidalBinaryMatrix;
 use clap::Parser;
 use rand::random;
 use std::collections::{hash_map::HashMap, HashSet};
@@ -7,6 +8,7 @@ use std::fs::read_to_string;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
+/// CLI for testing TALOS CA generation.
 struct Args {
     /// Flag for testing only contiguous seeds.
     #[arg(short, long, action)]
@@ -25,11 +27,13 @@ struct Args {
     init_file: String,
 }
 
+
+
 fn main() {
     let args = Args::parse();
 
-    let mut global_used_states: HashSet<Vec<u32>, _> = HashSet::new();
-    let mut global_duplicates: Vec<Vec<u32>> = Vec::new();
+    let mut global_used_states: HashSet<Vec<bool>, _> = HashSet::new();
+    let mut global_duplicates: Vec<Vec<bool>> = Vec::new();
 
     let seed_gen = (0..args.seeds).map(if args.use_contiguous_seeds {
         |i| i
@@ -47,39 +51,39 @@ fn main() {
         let mut char_map: HashMap<char, bool> = parse::gen_char_map(seed);
         char_map.insert('#', true);
         char_map.insert('.', false);
-        let mut local_used_states: HashSet<Vec<u32>, _> = HashSet::new();
+        let mut local_used_states: HashSet<Vec<bool>, _> = HashSet::new();
         let mut n_local_alive_total = 0;
 
         let table =
             parse::parse_bool_table(&read_to_string(&args.init_file).unwrap(), &char_map).unwrap();
-        let state = matrix::ToroidalBitMatrix::new(table).unwrap();
+        let state = matrix::ToroidalBoolMatrix::new(table).unwrap();
         let rule = automata::AutomatonRule {
             born: [false, false, true, true, true, true, true, false, false],
             dies: [true, true, false, false, false, true, true, true, true],
         };
 
-        let mut automaton = automata::Automaton::new(state, rule);
+        let mut automaton = automata::Automaton::new(state, &rule);
 
         let mut final_generation = args.generations;
         let mut contains_global_duplicate = false;
 
         for generation in 0..args.generations {
-            let n_alive = automaton.popcount();
+            let n_alive = automaton.get_state().popcount();
             n_local_alive_total += n_alive;
 
-            let curr_state = automaton.get_storage();
+            let curr_state = automaton.get_state().get_storage();
 
-            if global_used_states.contains(&curr_state) {
-                global_duplicates.push(curr_state);
+            if global_used_states.contains(curr_state) {
+                global_duplicates.push(curr_state.to_vec());
                 contains_global_duplicate = true;
                 final_generation = generation;
                 break;
-            } else if local_used_states.contains(&curr_state) {
+            } else if local_used_states.contains(curr_state) {
                 final_generation = generation;
                 break;
             }
             local_used_states.insert(curr_state.clone());
-            global_used_states.insert(curr_state);
+            global_used_states.insert(curr_state.to_vec());
             automaton.iter_rule(1);
         }
 
