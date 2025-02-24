@@ -1,5 +1,5 @@
 # Talos: Cellular Automata for Encryption
-This is the code and RFC for a novel encryption algorithm based on cellular automata. We the project after the mythical bronze automaton Talos, who defended the island of Crete from invaders.
+This is the code and RFC for a novel encryption algorithm based on cellular automata. We name the project after the mythical bronze automaton Talos, who defended the island of Crete from invaders.
 
 ## Running the Project
 ### Compiling Talos
