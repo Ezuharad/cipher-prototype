@@ -12,8 +12,16 @@ name = "crypt"
 path = "src/bin/crypt.rs"
 
 [[bin]]
-name = "test"
-path = "src/bin/test.rs"
+name = "test_count"
+path = "src/bin/test_count.rs"
+
+[[bin]]
+name = "test_shift"
+path = "src/bin/test_shift.rs"
+
+[[bin]]
+name = "test_transpose"
+path = "src/bin/test_transpose.rs"
 
 
 [dependencies]

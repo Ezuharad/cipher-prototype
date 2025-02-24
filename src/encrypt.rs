@@ -6,7 +6,7 @@ use std::string::{self, FromUtf8Error};
 
 /// Reads 4 bit values at `idx0`, `idx`, `idx2`, `idx3`, in `matrix`, then concatenates them into a
 /// `u8`.
-fn read_4_bits<T>(
+pub fn read_4_bits<T>(
     matrix: &T,
     idx0: MatrixIndex,
     idx1: MatrixIndex,
@@ -91,14 +91,14 @@ where
         let block_offset: isize = 4 * row_block;
         for (row_offset, col_offset) in [0, 2, 1, 3].iter().enumerate().rev() {
             let (r_offset, c_offset) = (row_offset as isize, *col_offset as isize);
-            let row_swap_idx = read_4_bits(
+            let col_swap_idx = read_4_bits(
                 key,
                 (block_offset + r_offset, c_offset),
                 (block_offset + r_offset, 4 + c_offset),
                 (block_offset + r_offset, 8 + c_offset),
                 (block_offset + r_offset, 12 + c_offset),
             ) as isize;
-            message_matrix.swap_rows(block_offset, row_swap_idx);
+            message_matrix.swap_rows(block_offset, col_swap_idx);
         }
     }
 }

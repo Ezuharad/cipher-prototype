@@ -8,7 +8,7 @@ use std::fs::read_to_string;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
-/// CLI for testing TALOS CA generation.
+/// CLI for testing Talos CA generation.
 struct Args {
     /// Flag for testing only contiguous seeds.
     #[arg(short, long, action)]

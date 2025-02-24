@@ -16,6 +16,8 @@ torch.set_default_device("cuda" if torch.cuda.is_available() else "cpu")
 class AutomataIter(Module):
     """Implementation of our Key Automata rule using PyTorch. Allows fast encryption via the GPU."""
 
+    # it would be interesting to try using a complex number `j` for the center value, as this would allow arbitrarily large neighborhoods without needing to scale out the large value
+    # not sure how the activation function would be chosen, however
     moore_kernel: Final[List[List[int]]] = [[1, 1, 1], [1, 10, 1], [1, 1, 1]]
 
     neumann_kernel: Final[List[List[int]]] = [[0, 1, 0], [1, 10, 1], [0, 1, 0]]
