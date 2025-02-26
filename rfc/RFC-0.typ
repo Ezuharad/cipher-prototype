@@ -143,9 +143,10 @@ As was done with our initialization matrices, we define a number of maxims we ca
 2. Low repetition frequency. If a CA state is repeated frequently, it is possible that some transpose key $T_i$ or shift key $S_i$ will be repeated for message blocks, allowing for a differential analysis.
 3. A roughly equivalent number of `0` and `1` cells in each evolved state. This limits the capability of probabilistic attacks.
 4. Most states have a precursor state, as this maximizes the effective key space of each block key.
-5. The rule is simple enough to process quickly, allowing for fast encryption and decryption (see @encryption_decryption).
+5. The rule is "symmetrical", meaning no particular set of cells has some special property. This both limits the occurrence of patterns in the automata, and also reduces its reliance on a small subset of the key.
+6. The rule is simple enough to process quickly, allowing for fast encryption and decryption (see @encryption_decryption).
 
-From these maxims, we propose the following class Moore-neighborhood III Cellular Automata rule based on empirical observation.
+From these maxims, we propose the following Moore-neighborhood Class III Cellular Automata rule based on empirical observation.
 1. If a cell is a `1` and has 2-4 neighboring `1` cells it stays a `1`; otherwise it becomes a `0`.
 2. If a cell is a `0` and has 2-6 neighboring `1` cells it becomes a `1`; otherwise it becomes a `0`.
 
@@ -188,9 +189,12 @@ Our experimental results in @empirical_results reveal potential avenues for prob
 
 We also note that further exploration of the joint probabilties of cell neighborhoods (that is, how much information a cell gives us about its neighbors) may yield further avenues for attacks.
 
+=== Scrambling Algorithm
+We note that although our scrambling algorithm does allow contiguous patches of bits to be spread across the message block, it also preserves the sum of the rows and columns of the block following transposition (that is, the sets of row and column sums do not change following scrambling). This may allow an attacker to reconstruct the original message if they are able to make a reasonable guess as to the shift automata state used in the XOR. This problem could be mitigated by using another scrambling algorithm, perhaps one which shifts rows or columns in addition to just swapping them.
+
 = Potential Improvements and Future Work
 == Seeding Matrices Through Time <time_smearing>
-As observed in @empirical_results, the Key Automata Rule is very sensitive to its initial state, and multiple keys collapse to the same initial state quite often. Because each CA state is determined only by its previous state, this very strongly decreases our key space. One potential solution for this problem is to seed the the initialization matrices $I_s$, $I_t$ not only across space, but also across time, perhaps by overwriting selected cells with key bits at predetermined time steps. We see in our results that once an automaton has escaped its initial state it rarely overlaps with another's. Thus, by extending the use of our key across multiple time steps, we provide more opportunities for deviation.
+As observed in @empirical_results, the Key Automata Rule is very sensitive to its initial state, and multiple keys collapse to the same initial state quite often. We term this problem state collision, after a similar phenomenon observed in designing hash functions. Because each CA state is determined only by its previous state, this very strongly decreases our key space. One potential solution for this problem is to seed the the initialization matrices $I_s$, $I_t$ not only across space, but also across time, perhaps by overwriting selected cells with key bits at predetermined time steps. We see in our results that once an automaton has escaped its initial state it rarely overlaps with another's. Thus, by extending the use of our key across multiple time steps, we provide more opportunities for deviation.
 
 == Larger Automata Sizes <larger_automata_states>
 The use of a larger automaton cellspace could prevent state collisions, as more possible states could be evolved from an initial, seeded state. We believe this to be an inferior option compared to that in @time_smearing, as we observe few state collisions past the first few initial states. Thus, this approach would more substantially increase computing costs and likely yield similar results.
