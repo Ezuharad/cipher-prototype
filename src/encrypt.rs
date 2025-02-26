@@ -1,8 +1,8 @@
 // 2025 Steven Chiacchira
 use crate::automata::Automaton;
 use crate::matrix::{MatrixIndex, ToroidalBinaryMatrix, ToroidalBoolMatrix};
-use crate::parse::{concat_bool_to_u8, explode_u8_to_bool};
-use std::string::{self, FromUtf8Error};
+use crate::parse::{concat_bool_to_u8, concat_bool_to_u8_vec, explode_u8_to_bool};
+use std::string::{self};
 
 /// Reads 4 bit values at `idx0`, `idx`, `idx2`, `idx3`, in `matrix`, then concatenates them into a
 /// `u8`.
@@ -105,10 +105,8 @@ where
 
 /// Splits `message` into 256 bit blocks, represented as flat vectors.
 /// The final block of `message` is not padded to 256 bits.
-fn block_split_256_message(message: &str) -> Vec<Vec<bool>> {
+fn block_split_256_message(message: Vec<u8>) -> Vec<Vec<bool>> {
     message
-        .as_bytes()
-        .to_vec()
         .chunks(256 / 8) // read each byte into a chunk of 256 bits (32 bytes)
         .map(|a| a.iter().map(|b| explode_u8_to_bool(*b)).flatten().collect())
         .collect()
@@ -155,9 +153,10 @@ fn decrypt_block_256(
     message_matrix.get_storage().to_vec()
 }
 
-/// Encrypts a message with a 256 bit block using the Talos algorithm.
+/// Encrypts a byte message with a 256 bit block using the Talos algorithm.
+/// Notably *DOES NOT* perform the temporal seeding as defined in RFC-1.
 pub fn encrypt_message_256(
-    message: &str,
+    message: Vec<u8>,
     shift_automata: &mut Automaton,
     transpose_automata: &mut Automaton,
 ) -> Vec<bool> {
@@ -174,15 +173,34 @@ pub fn encrypt_message_256(
 }
 
 /// Decrypts a message with a 256 bit block using the Talos algorithm.
+/// Notably *DOES NOT* perform the temporal seeding as defined in RFC-1.
 pub fn decrypt_message_256(
     ciphertext: Vec<bool>,
     shift_automata: &mut Automaton,
     transpose_automata: &mut Automaton,
-) -> Result<String, FromUtf8Error> {
+) -> Vec<u8> {
     let message_bits = ciphertext
         .chunks(16 * 16)
         .map(|b| decrypt_block_256(b.to_vec(), shift_automata, transpose_automata))
         .flatten()
         .collect();
-    reconstruct_message(message_bits)
+    concat_bool_to_u8_vec(message_bits)
+}
+
+/// Performs temporal seeding across `automata` using the method described in RFC-1. `key` is the
+/// 32-bit key used for seeding, and `seed_position` maps bit indices in `seed` to (potentially
+/// multiple) `MatrixIndices`.
+pub fn temporal_seed_automata(
+    automaton: &mut Automaton,
+    key: u32,
+    seed_positions: &Vec<Vec<MatrixIndex>>,
+) {
+    automaton.iter_rule(8);
+    for bit_pos in 0..(u32::BITS as usize) {
+        let overwritten_value: bool = (key >> bit_pos & 1) > 0;
+        for matrix_idx in &seed_positions[bit_pos] {
+            automaton.set_state(&matrix_idx, overwritten_value);
+        }
+        automaton.iter_rule(8);
+    }
 }

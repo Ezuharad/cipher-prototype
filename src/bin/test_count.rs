@@ -1,7 +1,7 @@
 // 2025 Steven Chiacchira
 use clap::Parser;
 use rand::random;
-use std::collections::{hash_map::HashMap, HashSet};
+use std::collections::hash_map::HashMap;
 use std::fs::read_to_string;
 use talos::matrix::ToroidalBinaryMatrix;
 use talos::{automata, matrix, parse};
@@ -60,10 +60,7 @@ fn main() {
         for generation in 0..args.generations {
             automaton.iter_rule(1);
             let n_alive = automaton.get_state().popcount();
-            println!(
-                "{}\t{}\t{}\t{}",
-                test, seed, generation, n_alive,
-            );
+            println!("{}\t{}\t{}\t{}", test, seed, generation, n_alive,);
         }
     }
 }

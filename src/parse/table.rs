@@ -1,4 +1,5 @@
 // 2025 Steven Chiacchira
+use crate::matrix::MatrixIndex;
 use std::collections::HashMap;
 use std::iter::zip;
 /// Error occurring during the reading of a string defining a table of `bool` values.
@@ -61,4 +62,32 @@ pub fn parse_bool_table(
     }
 
     Ok(table)
+}
+
+/// Returns a vector of vectors specifying the
+/// [`ToroidalBinaryMatrix`](crate::matrix::ToroidalBinaryMatrix) positions corresponding to
+/// each bit of a key.
+/// Ex.
+/// The first entry of the returned vector is a list of matrix indices associated with the first
+/// bit index of the key.
+pub fn get_temporal_seed_map(string: &str) -> Vec<Vec<MatrixIndex>> {
+    let mut result = Vec::new();
+    for character in DEFAULT_KEYS.chars() {
+        result.push(get_char_indices(string, character))
+    }
+    result
+}
+
+/// Returns the indices of `character` in `string` as [`MatrixIndex`](crate::matrix::MatrixIndex).
+fn get_char_indices(string: &str, character: char) -> Vec<MatrixIndex> {
+    let mut result = Vec::new();
+    for (row, line) in string.lines().enumerate() {
+        for (col, ch) in line.chars().enumerate() {
+            if ch == character {
+                result.push((row as isize, col as isize));
+            }
+        }
+    }
+
+    result
 }

@@ -61,18 +61,22 @@ impl ToroidalBinaryMatrix for ToroidalBitMatrix {
 
         (self.storage[vec_idx] >> element_offset) & 1 != 0
     }
-    fn set(&mut self, idx: MatrixIndex, value: bool) {
+    fn set(&mut self, idx: &MatrixIndex, value: bool) -> bool {
         let row = idx.0.rem_euclid(self.rows as isize);
         let col = idx.1.rem_euclid(self.cols as isize);
         let bit_index = row as usize * self.cols + col as usize;
 
         let vec_idx: usize = bit_index / u32::BITS as usize;
         let element_offset: usize = bit_index % u32::BITS as usize;
+        
+        let original_value = self.storage[vec_idx] << (element_offset & 1 ) > 0;
         if value {
             self.storage[vec_idx] |= 1 << element_offset;
         } else {
             self.storage[vec_idx] &= !(1 << element_offset);
         }
+
+        original_value
     }
     fn bitwise_xor(&mut self, other: &ToroidalBitMatrix) -> Result<(), MatrixOpError> {
         if self.rows != other.rows || self.cols != other.cols {
@@ -93,7 +97,7 @@ impl ToroidalBitMatrix {
     pub fn get_storage(&self) -> &Vec<u32> {
         &self.storage
     }
-    /// Constructs a new [`ToroidalBoolMatrix`] from storage, as well as the count of rows and
+    /// Constructs a new [`ToroidalBitMatrix`] from storage, as well as the count of rows and
     /// columns. Returns an error if the storage is the wrong size for the specified matrix shape.
     pub fn from_storage(
         rows: usize,

@@ -47,12 +47,15 @@ impl ToroidalBinaryMatrix for ToroidalBoolMatrix {
 
         self.storage[vec_idx]
     }
-    fn set(&mut self, idx: MatrixIndex, value: bool) {
+    fn set(&mut self, idx: &MatrixIndex, value: bool) -> bool {
         let row = idx.0.rem_euclid(self.rows as isize);
         let col = idx.1.rem_euclid(self.cols as isize);
 
         let vec_idx: usize = row as usize * self.get_cols() as usize + col as usize;
+        let result = self.storage[vec_idx];
         self.storage[vec_idx] = value;
+
+        result
     }
 
     fn bitwise_xor(&mut self, other: &ToroidalBoolMatrix) -> Result<(), MatrixOpError> {

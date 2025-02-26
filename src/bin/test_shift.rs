@@ -1,10 +1,10 @@
 // 2025 Steven Chiacchira
-use talos::{automata, matrix, parse};
-use talos::matrix::ToroidalBinaryMatrix;
 use clap::Parser;
 use rand::random;
 use std::collections::{hash_map::HashMap, HashSet};
 use std::fs::read_to_string;
+use talos::matrix::ToroidalBinaryMatrix;
+use talos::{automata, encrypt, matrix, parse};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -25,9 +25,10 @@ struct Args {
     /// File to use for initializing the [Automaton](automata::Automaton) state.
     #[arg(short, long)]
     init_file: String,
+
+    #[arg(long, action)]
+    no_temporal_seed: bool,
 }
-
-
 
 fn main() {
     let args = Args::parse();
@@ -40,6 +41,9 @@ fn main() {
     } else {
         |_| random::<u32>()
     });
+
+    let matrix_config = read_to_string(&args.init_file).unwrap();
+    let temporal_seed_map = parse::get_temporal_seed_map(&matrix_config);
 
     println!("# Using contiguous seeds: {}", args.use_contiguous_seeds);
     println!("# Number of seeds: {}", args.seeds);
@@ -54,8 +58,7 @@ fn main() {
         let mut local_used_states: HashSet<Vec<bool>, _> = HashSet::new();
         let mut n_local_alive_total = 0;
 
-        let table =
-            parse::parse_bool_table(&read_to_string(&args.init_file).unwrap(), &char_map).unwrap();
+        let table = parse::parse_bool_table(&matrix_config, &char_map).unwrap();
         let state = matrix::ToroidalBoolMatrix::new(table).unwrap();
         let rule = automata::AutomatonRule {
             born: [false, false, true, true, true, true, true, false, false],
@@ -63,6 +66,9 @@ fn main() {
         };
 
         let mut automaton = automata::Automaton::new(state, &rule);
+        if !args.no_temporal_seed {
+            encrypt::temporal_seed_automata(&mut automaton, seed, &temporal_seed_map);
+        }
 
         let mut final_generation = args.generations;
         let mut contains_global_duplicate = false;

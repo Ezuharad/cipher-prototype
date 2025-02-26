@@ -53,9 +53,9 @@ impl Automaton {
                     let n_alive_neighbors = self.alive_neighbors(idx);
 
                     if self.state.at(idx) {
-                        copy.set(idx, !self.rule.dies[n_alive_neighbors as usize]);
+                        copy.set(&idx, !self.rule.dies[n_alive_neighbors as usize]);
                     } else {
-                        copy.set(idx, self.rule.born[n_alive_neighbors as usize]);
+                        copy.set(&idx, self.rule.born[n_alive_neighbors as usize]);
                     }
                 }
             }
@@ -67,6 +67,11 @@ impl Automaton {
     /// Returns a reference to the Automaton state, represented as a [`ToroidalBoolMatrix`].
     pub fn get_state(&self) -> &ToroidalBoolMatrix {
         &self.state
+    }
+
+    /// Sets the state of the cell at `idx` to `value`, returning the original value at `idx`.
+    pub fn set_state(&mut self, idx: &MatrixIndex, value: bool) -> bool {
+        self.state.set(&idx, value)
     }
 
     /// Counts the number of alive [Moore

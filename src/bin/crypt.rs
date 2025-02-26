@@ -2,7 +2,8 @@
 use clap::Parser;
 use rand::random;
 use std::collections::HashMap;
-use std::io::{self, Read, Write};
+use std::fs;
+use std::io::{self, Write};
 use talos::matrix::ToroidalBinaryMatrix;
 use talos::parse::explode_u8_to_bool_vec;
 use talos::{automata, encrypt, matrix, parse};
@@ -13,19 +14,32 @@ enum ArgParseError {
     /// `--encrypt`
     /// `--decrypt`
     NoAction(),
+
+    /// A key must be provided to decrypt a message.
+    NoKeyForDecrypt(),
+
+    /// A specified filename must exist
+    NoSuchFile(),
 }
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
-/// Command line tool for encrypting and decrypting data with Talos. Data is read and written
-/// through stdin and stdout.
+/// Command line tool for encrypting and decrypting data with Talos.
+/// 2025 Steven Chiacchira
 struct Args {
-    /// Encrypt data option. Mutually exclusive with --decrypt. Reads from stdin and prints encrypted data to stdout.
+    /// Name of the file to encrypt or decrypt
+    input: String,
+
+    /// Output file. Defaults to stdout if nothing is specified
+    #[arg(short, long)]
+    out: Option<String>,
+
+    /// Encrypt data option. Mutually exclusive with --decrypt. Reads from stdin and prints encrypted data to stdout
     #[arg(short, long, action, conflicts_with = "decrypt")]
     encrypt: bool,
 
     /// Decrypt data option. Mutually exclusive with --encrypt. Reads from stdin and prints
-    /// decrypted data to stdout.
+    /// decrypted data to stdout
     #[arg(short, long, conflicts_with = "encrypt")]
     decrypt: bool,
 
@@ -37,11 +51,13 @@ struct Args {
 
 fn main() -> Result<(), ArgParseError> {
     let args = Args::parse();
+    if args.key == None && args.decrypt {
+        return Err(ArgParseError::NoKeyForDecrypt());
+    }
     let seed = match args.key {
         Some(seed) => seed,
         None => random::<u32>(),
     };
-    eprintln!("Using key {}", seed);
 
     let mut char_map: HashMap<char, bool> = parse::gen_char_map(seed);
 
@@ -54,34 +70,51 @@ fn main() -> Result<(), ArgParseError> {
     let t_state = matrix::ToroidalBoolMatrix::new(t_table).unwrap();
     let s_state = matrix::ToroidalBoolMatrix::new(s_table).unwrap();
 
-    let mut shift_automata = automata::Automaton::new(s_state, &RULE);
     let mut transpose_automata = automata::Automaton::new(t_state, &RULE);
-    if args.encrypt {
-        let plaintext = io::read_to_string(io::stdin()).unwrap();
-        let bits =
-            encrypt::encrypt_message_256(&plaintext, &mut shift_automata, &mut transpose_automata);
-        let encrypted = parse::concat_bool_to_u8_vec(bits);
-        let mut output = io::stdout();
-        let _ = output.write(&encrypted);
-    } else if args.decrypt {
-        let mut buffer: Vec<u8> = Vec::new();
-        let _ = io::stdin().read_to_end(&mut buffer);
-        let cipherstream = explode_u8_to_bool_vec(buffer);
-        let decrypted = encrypt::decrypt_message_256(
-            cipherstream,
+    let mut shift_automata = automata::Automaton::new(s_state, &RULE);
+
+    encrypt::temporal_seed_automata(
+        &mut transpose_automata,
+        seed,
+        &parse::get_temporal_seed_map(T_INIT_MATRIX),
+    );
+    encrypt::temporal_seed_automata(
+        &mut shift_automata,
+        seed,
+        &parse::get_temporal_seed_map(S_INIT_MATRIX),
+    );
+
+    let input_buffer = match fs::read(args.input) {
+        Ok(buffer) => buffer,
+        Err(_) => {
+            return Err(ArgParseError::NoSuchFile());
+        }
+    };
+
+    let output_bytes = if args.encrypt {
+        eprintln!("Using key {}", seed);
+        let bits = encrypt::encrypt_message_256(
+            input_buffer,
             &mut shift_automata,
             &mut transpose_automata,
         );
-
-        match decrypted {
-            Ok(message) => println!("{}", message),
-            Err(_) => eprintln!("Invalid key or malformed ciphertext received"),
-        }
+        parse::concat_bool_to_u8_vec(bits)
+    } else if args.decrypt {
+        let bits = explode_u8_to_bool_vec(input_buffer);
+        encrypt::decrypt_message_256(bits, &mut shift_automata, &mut transpose_automata)
     } else {
         return Err(ArgParseError::NoAction());
+    };
+
+    match args.out {
+        Some(filename) => {
+            let _ = fs::write(filename, output_bytes);
+        }
+        None => {
+            let _ = io::stdout().write(&output_bytes);
+        }
     }
 
-    //println!("Plaintext: {}", plaintext);
     Ok(())
 }
 
