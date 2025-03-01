@@ -27,6 +27,7 @@ An [encrypted file](data/challenge.encrypted) has been provided via Git LFS. Use
 
 ## Disclosure and Warning ⚠️
 **It should be emphasized that this is merely a research exercise; I am not a crypanalyst or mathematician by trade, and using this tool for any serious endeavor would yield disasterous consequences.**
+
 Multiple steps which should be taken in the development of any cryptographic protocol have been intentionally ignored:
 - No prior work in adapting CAs for encryption was consulted. This was done because I want to implement something unique, and did not want to be influenced by the state of the field.
 - No large scale statistical tests have been employed to verify the pseudorandomness of our automata rule.
