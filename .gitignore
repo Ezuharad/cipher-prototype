@@ -1,5 +1,9 @@
-target
-doc
-rfc/*pdf
+__pycache__
+
 data/corpus
 data/experiment
+
+target
+doc
+
+rfc/*pdf

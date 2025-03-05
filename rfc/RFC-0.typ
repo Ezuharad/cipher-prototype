@@ -18,12 +18,10 @@ A #emph([Cellular Automata]) (CA) is a discrete-time, deterministic process whic
 
 = Prerequisites
 == Cellular Automata
-We shall focus on cellular automata in the discrete 2D plane (a grid of bits), as these are well studied and allow for efficient spatial diffusion of information. CAs of this type take as input a certain grid state $G_i$ and output another grid state $G_(i+1)$, where each cell contains either a 0 or 1. We also call this process #emph([evolution]). The most famous example of such a cellular automata is John Conway's Game of Life, shown in @conway_life_example, which defines four simple rules for obtaining the next grid state:
+We shall focus on cellular automata in the discrete 2D plane (a grid of bits), as these are well studied and allow for efficient spatial diffusion of information. CAs of this type take as input a certain grid state $G_i$ and output another grid state $G_(i+1)$, where each cell contains either a 0 or 1. We also call this process #emph([evolution]). The most famous example of such a cellular automata is John Conway's Game of Life, shown in @conway_life_example, which defines two simple rules for obtaining the next grid state:
 
-1. Any cell containing a `1` with fewer than two adjacent `1`s becomes a `0`.
-2. Any cell containing a `1` with two or three adjacent `1`s becomes a `1`.
-3. Any cell containing a `1` with more than three adjacent `1`s becomes a `0`.
-4. Any cell containing a `0` with exactly three adjacent neighbors becomes a `1`.
+1. If a cell containing a "1" has 2-3 living neighbors, it stays a "1". Otherwise it becomes a "0"
+2. If a cell containing a "0" has exactly three "1" neighbors, it becomes a "1". Otherwise it stays a "0"
 
 #figure([#image("asset/game-of-life-glider.png")], caption: [Three time steps from Conway's Game of Life.. This particular configuration is known as a "glider".]) <conway_life_example>
 
